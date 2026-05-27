@@ -31,10 +31,16 @@ const GOOGLE_API_KEY = 'AIzaSyCxW6LwPflbEeSC_xL7t7n-m812NZ8uR7c'
 const GOOGLE_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_API_KEY}`
 
 async function callModel(messages: { role: string; content: string }[]) {
-  const contents = messages.map(m => ({
-    role: m.role === 'assistant' ? 'model' : 'user',
-    parts: [{ text: m.content }]
-  }))
+  const contents = [
+  {
+    role: 'user',
+    parts: [{ text: systemPrompt }]
+  },
+  {
+    role: 'user',
+    parts: [{ text }]
+  }
+]
 
   const response = await fetch(GOOGLE_URL, {
     method: 'POST',
