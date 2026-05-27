@@ -25,7 +25,8 @@ Structure your response in 5 sections using HTML (<h3>, <strong>, <ul><li>). No 
 4. <h3>Miglioramenti e Quick Wins</h3> — Practical actions + fast wins
 5. <h3>KPI da Monitorare</h3> — 3-5 specific metrics
 
-Be concrete, specific to the user's context. No generic advice.`
+Be concrete, specific to the user's context. No generic advice.
+IMPORTANT: Do NOT greet the user. Start immediately with structured analysis. No introductions.`
 
 const GOOGLE_API_KEY = 'AIzaSyCxW6LwPflbEeSC_xL7t7n-m812NZ8uR7c'
 const GOOGLE_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_API_KEY}`
