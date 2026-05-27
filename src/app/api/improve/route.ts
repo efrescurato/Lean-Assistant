@@ -31,16 +31,10 @@ const GOOGLE_API_KEY = 'AIzaSyCxW6LwPflbEeSC_xL7t7n-m812NZ8uR7c'
 const GOOGLE_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_API_KEY}`
 
 async function callModel(messages: { role: string; content: string }[]) {
-  const contents = [
-  {
+  const contents = messages.map(m => ({
     role: 'user',
-    parts: [{ text: systemPrompt }]
-  },
-  {
-    role: 'user',
-    parts: [{ text }]
-  }
-]
+    parts: [{ text: m.content }]
+  }))
 
   const response = await fetch(GOOGLE_URL, {
     method: 'POST',
@@ -62,7 +56,7 @@ async function callModel(messages: { role: string; content: string }[]) {
   }
 
   const data = await response.json()
-  return data.candidates?.[0]?.content?.parts?.[0]?.text || 'Nessuna risposta disponibile. Riprova.'
+  return data.candidates?.[0]?.content?.parts?.[0]?.text || 'Nessuna risposta disponibile.'
 }
 
 export async function POST(req: NextRequest) {
@@ -74,8 +68,14 @@ export async function POST(req: NextRequest) {
     }
 
     const messages = [
-      { role: 'user', content: systemPrompt },
-      { role: 'user', content: text }
+      {
+        role: 'user',
+        content: `SYSTEM INSTRUCTION:\n${systemPrompt}`
+      },
+      {
+        role: 'user',
+        content: text
+      }
     ]
 
     console.log('Calling Google AI with gemini-2.5-flash')
