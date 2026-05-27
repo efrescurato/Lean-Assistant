@@ -28,7 +28,7 @@ Structure your response in 5 sections using HTML (<h3>, <strong>, <ul><li>). No 
 Be concrete, specific to the user's context. No generic advice.
 IMPORTANT: Do NOT greet the user. Start immediately with structured analysis. No introductions.`
 
-const GOOGLE_API_KEY = 'AIzaSyCxW6LwPflbEeSC_xL7t7n-m812NZ8uR7c'
+const GOOGLE_API_KEY = 'AIzaSyBskKObftL8ynsS-f9jc5HpiLLy6BwMxfQ'
 const GOOGLE_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_API_KEY}`
 
 async function callModel(text: string) {
