@@ -30,34 +30,33 @@ Be concrete, specific to the user's context. No generic advice.`
 const GOOGLE_API_KEY = 'AIzaSyCxW6LwPflbEeSC_xL7t7n-m812NZ8uR7c'
 const GOOGLE_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_API_KEY}`
 
-async function callModel(messages: { role: string; content: string }[]) {
-  const contents = [
-    {
-      role: 'user',
-      parts: [{ text: systemPrompt }]
-    },
-    {
-      role: 'user',
-      parts: [{ text: messages[1].content }]
-    }
-  ]
-
+async function callModel(text: string) {
   const response = await fetch(GOOGLE_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      contents,
+      contents: [
+        {
+          role: 'user',
+          parts: [{ text: systemPrompt }]
+        },
+        {
+          role: 'user',
+          parts: [{ text }]
+        }
+      ],
       generationConfig: {
-        maxOutputTokens: 1200,
-        temperature: 0.7
+        maxOutputTokens: 1500,
+        temperature: 0.3
       }
     })
   })
 
   const data = await response.json()
-  return data.candidates?.[0]?.content?.parts?.[0]?.text
+
+  return data.candidates?.[0]?.content?.parts?.[0]?.text || 'Errore risposta'
 }
 
 export async function POST(req: NextRequest) {
@@ -80,7 +79,7 @@ export async function POST(req: NextRequest) {
     ]
 
     console.log('Calling Google AI with gemini-2.5-flash')
-    const improved = await callModel(messages)
+    const improved = await callModel(text)
     console.log('Google AI success')
 
     return NextResponse.json({ improved })
