@@ -49,7 +49,7 @@ async function callModel(text: string) {
         }
       ],
       generationConfig: {
-        maxOutputTokens: 3000,
+        maxOutputTokens: 6000,
         temperature: 0.3
       }
     })
