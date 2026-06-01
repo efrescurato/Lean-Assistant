@@ -27,7 +27,8 @@ Structure your response in 5 sections using HTML (<h3>, <strong>, <ul><li>). No 
 
 Be concrete, specific to the user's context. No generic advice.
 IMPORTANT: Do NOT greet the user. Start immediately with structured analysis. No introductions.`
-
+const GOOGLE_URL = process.env.GOOGLE_URL;
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 async function callModel(text: string) {
   const response = await fetch(GOOGLE_URL, {
