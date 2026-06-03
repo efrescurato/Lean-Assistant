@@ -59,7 +59,24 @@ async function callModel(text: string) {
 
   const data = await response.json()
 
-  return data.candidates?.[0]?.content?.parts?.[0]?.text || 'Errore risposta'
+  // 🔴 Se API fallisce (400, 401, 403, ecc.)
+  if (!response.ok) {
+    console.error("GEMINI ERROR RESPONSE:", data)
+
+    return data?.error?.message 
+      || JSON.stringify(data)
+  }
+
+  // 🔴 Se non ci sono candidate (safety block, ecc.)
+  const textResponse = data?.candidates?.[0]?.content?.parts?.[0]?.text
+
+  if (!textResponse) {
+    console.error("NO CANDIDATES:", data)
+
+    return JSON.stringify(data)
+  }
+
+  return textResponse
 }
 
 export async function POST(req: NextRequest) {
