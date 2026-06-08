@@ -30,6 +30,10 @@ IMPORTANT: Do NOT greet the user. Start immediately with structured analysis. No
 const GOOGLE_URL = process.env.GOOGLE_URL;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
+function sleep(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
 async function callModel(text: string, model: string) {
   const response = await fetch(
     `${GOOGLE_URL}/${model}:generateContent?key=${GEMINI_API_KEY}`,
@@ -60,18 +64,20 @@ async function callModel(text: string, model: string) {
   const data = await response.json()
 
   if (!response.ok) {
-    return { error: data, success: false }
+    const isRateLimit = response.status === 429 || data?.error?.status === 'RESOURCE_EXHAUSTED'
+    return { error: data, success: false, isRateLimit }
   }
 
   const textResponse = data?.candidates?.[0]?.content?.parts?.[0]?.text
 
   if (!textResponse) {
-    return { error: data, success: false }
+    return { error: data, success: false, isRateLimit: false }
   }
 
   return {
     success: true,
-    text: textResponse
+    text: textResponse,
+    isRateLimit: false
   }
 }
 
@@ -83,9 +89,12 @@ async function callWithFallback(text: string) {
     return { ...flashResult, model: "gemini-2.5-flash" }
   }
 
-  console.warn("Flash failed, trying Flash Lite:", flashResult.error)
-
-  // 2. fallback Lite
+  if (flashResult.isRateLimit) {
+    console.warn("Rate limit su Flash, aspetto 2s...")
+    await sleep(2000)
+  } else {
+    console.warn("Flash failed:", flashResult.error)
+  }
   const liteResult = await callModel(text, "gemini-2.5-flash-lite")
 
   if (liteResult.success) {
