@@ -32,14 +32,13 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 async function callModel(text: string, model: string) {
   const response = await fetch(
-    `${GOOGLE_URL}?key=${GEMINI_API_KEY}`,
+    `${GOOGLE_URL}/${model}:generateContent?key=${GEMINI_API_KEY}`,
     {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model,
         contents: [
           {
             role: 'user',
