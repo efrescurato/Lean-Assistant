@@ -30,7 +30,7 @@ IMPORTANT: Do NOT greet the user. Start immediately with structured analysis. No
 const GOOGLE_URL = process.env.GOOGLE_URL;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-async function callModel(text: string) {
+async function callModel(text: string, model: string) {
   const response = await fetch(
     `${GOOGLE_URL}?key=${GEMINI_API_KEY}`,
     {
@@ -39,6 +39,7 @@ async function callModel(text: string) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
+        model,
         contents: [
           {
             role: 'user',
@@ -59,24 +60,44 @@ async function callModel(text: string) {
 
   const data = await response.json()
 
-  // 🔴 Se API fallisce (400, 401, 403, ecc.)
   if (!response.ok) {
-    console.error("GEMINI ERROR RESPONSE:", data)
-
-    return data?.error?.message 
-      || JSON.stringify(data)
+    return { error: data, success: false }
   }
 
-  // 🔴 Se non ci sono candidate (safety block, ecc.)
   const textResponse = data?.candidates?.[0]?.content?.parts?.[0]?.text
 
   if (!textResponse) {
-    console.error("NO CANDIDATES:", data)
-
-    return JSON.stringify(data)
+    return { error: data, success: false }
   }
 
-  return textResponse
+  return {
+    success: true,
+    text: textResponse
+  }
+}
+
+async function callWithFallback(text: string) {
+  // 1. prova Flash
+  const flashResult = await callModel(text, "gemini-2.5-flash")
+
+  if (flashResult.success) {
+    return { ...flashResult, model: "gemini-2.5-flash" }
+  }
+
+  console.warn("Flash failed, trying Flash Lite:", flashResult.error)
+
+  // 2. fallback Lite
+  const liteResult = await callModel(text, "gemini-2.5-flash-lite")
+
+  if (liteResult.success) {
+    return { ...liteResult, model: "gemini-2.5-flash-lite" }
+  }
+
+  // 3. fallimento totale
+  return {
+    success: false,
+    error: liteResult.error || flashResult.error
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -84,29 +105,49 @@ export async function POST(req: NextRequest) {
     const { text } = await req.json()
 
     if (!text || typeof text !== 'string') {
-      return NextResponse.json({ improved: 'Errore: testo non valido.' }, { status: 400 })
+      return NextResponse.json(
+        {
+          success: false,
+          errorType: 'INVALID_INPUT',
+          message: 'Testo non valido',
+        },
+        { status: 400 }
+      )
     }
 
-    const messages = [
-      {
-        role: 'user',
-        content: `SYSTEM INSTRUCTION:\n${systemPrompt}`
-      },
-      {
-        role: 'user',
-        content: text
-      }
-    ]
+    const result = await callWithFallback(text)
 
-    console.log('Calling Google AI with gemini-2.5-flash')
-    const improved = await callModel(text)
-    console.log('Google AI success')
+    // ❌ caso fallimento totale Gemini
+    if (!result.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          errorType: 'GEMINI_ERROR',
+          message: 'Errore API Gemini',
+          error: result.error,
+        },
+        { status: 500 }
+      )
+    }
 
-    return NextResponse.json({ improved })
-  } catch (error: any) {
-    console.error('Google AI Error:', error)
+    // ✅ successo
     return NextResponse.json({
-      improved: `Errore: ${error.message || 'Errore imprevisto. Riprova.'}`
-    }, { status: 500 })
+      success: true,
+      data: {
+        improved: result.text,
+        model: result.model,
+      },
+    })
+
+  } catch (error: any) {
+    return NextResponse.json(
+      {
+        success: false,
+        errorType: 'SERVER_ERROR',
+        message: error?.message || 'Errore imprevisto',
+      },
+      { status: 500 }
+    )
   }
 }
+
