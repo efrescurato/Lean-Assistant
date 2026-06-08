@@ -41,7 +41,14 @@ export default function Home() {
       // Parse successful response
       try {
         const data = JSON.parse(responseText)
-        setOutput(data.improved || 'Nessuna risposta disponibile. Riprova.')
+
+        if (!data.success) {
+          setOutput(data.message || 'Errore sconosciuto')
+          return
+        }
+
+      setOutput(data.data?.improved || 'Nessuna risposta disponibile. Riprova.')
+        
       } catch (parseError) {
         console.error('Parse error:', parseError)
         setOutput('Errore nell\'elaborazione della risposta. Riprova.')
