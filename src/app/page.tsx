@@ -6,6 +6,7 @@ export default function Home() {
   const [input, setInput] = useState('')
   const [output, setOutput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [model, setModel] = useState('')
 
   const analyzeProcess = async () => {
     if (!input.trim()) return
@@ -48,6 +49,7 @@ export default function Home() {
         }
 
       setOutput(data.data?.improved || 'Nessuna risposta disponibile. Riprova.')
+      setModel(data.data?.model || '')
         
       } catch (parseError) {
         console.error('Parse error:', parseError)
@@ -171,6 +173,15 @@ export default function Home() {
                 fontFamily: 'Montserrat, sans-serif'
               }}
             />
+            {model && (
+            <div style={{
+              marginTop: '10px',
+              fontSize: '12px',
+              color: '#6D76AC'
+            }}>
+              Modello utilizzato: {model}
+            </div>
+            )}
           </div>
         )}
       </main>
