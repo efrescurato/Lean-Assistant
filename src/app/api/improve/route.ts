@@ -82,26 +82,44 @@ async function callModel(text: string, model: string) {
 }
 
 async function callWithFallback(text: string) {
-  // 1. prova Flash
-  const flashResult = await callModel(text, "gemini-2.5-flash")
+  // 1. Prova Flash con retry in caso di rate limit
+  const FLASH_RETRIES = 2
+  const RETRY_DELAYS = [2000, 5000] // ms tra i tentativi
+
+  let flashResult = await callModel(text, "gemini-2.5-flash")
 
   if (flashResult.success) {
     return { ...flashResult, model: "gemini-2.5-flash" }
   }
 
-  if (flashResult.isRateLimit) {
-    console.warn("Rate limit su Flash, aspetto 2s...")
-    await sleep(2000)
-  } else {
-    console.warn("Flash failed:", flashResult.error)
+  for (let attempt = 0; attempt < FLASH_RETRIES; attempt++) {
+    if (!flashResult.isRateLimit) {
+      // Errore non di rate limit: inutile riprovare Flash
+      console.warn(`Flash errore non-rateLimit al tentativo ${attempt + 1}:`, flashResult.error)
+      break
+    }
+
+    const delay = RETRY_DELAYS[attempt] ?? 5000
+    console.warn(`Rate limit su Flash (tentativo ${attempt + 1}/${FLASH_RETRIES}), aspetto ${delay}ms...`)
+    await sleep(delay)
+
+    flashResult = await callModel(text, "gemini-2.5-flash")
+
+    if (flashResult.success) {
+      console.info(`Flash OK al retry ${attempt + 1}`)
+      return { ...flashResult, model: "gemini-2.5-flash" }
+    }
   }
+
+  // 2. Flash esaurito: fallback su Lite
+  console.warn("Flash non disponibile, fallback su gemini-2.5-flash-lite. Motivo:", flashResult.error)
   const liteResult = await callModel(text, "gemini-2.5-flash-lite")
 
   if (liteResult.success) {
     return { ...liteResult, model: "gemini-2.5-flash-lite" }
   }
 
-  // 3. fallimento totale
+  // 3. Fallimento totale
   return {
     success: false,
     error: liteResult.error || flashResult.error
@@ -158,4 +176,3 @@ export async function POST(req: NextRequest) {
     )
   }
 }
-
